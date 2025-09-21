@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Keluar Masuk Barang</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c3e50, #1a2530);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-button {
+            padding: 16px 20px;
+            background-color: #ecf0f1;
+            border: none;
+            flex: 1;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .tab-button.active {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .tab-button:hover {
+            background-color: #d6dbdf;
+        }
+        
+        .tab-button.active:hover {
+            background: linear-gradient(135deg, #2980b9, #3498db);
+        }
+        
+        .tab-content {
+            display: none;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e8f4fc;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-edit {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+        }
+        
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .search-bar input {
+            flex: 1;
+        }
+        
+        .search-bar button {
+            padding: 12px 20px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            margin-bottom: 12px;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .stat-card p {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            background: #2ecc71;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        @media (max-width: 768px) {
+            .stats {
+                flex-direction: column;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .search-bar {
+                flex-direction: column;
+            }
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+        }
+        
+        .input-with-icon input {
+            padding-left: 40px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-in {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .badge-out {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        /* Style untuk autocomplete */
+        .autocomplete {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .autocomplete-items div {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #d4d4d4;
+        }
+        
+        .autocomplete-items div:hover {
+            background-color: #e9e9e9;
+        }
+        
+        .autocomplete-active {
+            background-color: #3498db !important;
+            color: #ffffff;
+        }
+        
+        /* Style untuk fitur import/export */
+        .import-export {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .import-export-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        
+        .import-export-btn:hover {
+            background: linear-gradient(135deg, #8e44ad, #7d3c98);
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        
+        .export-btn:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 50%;
+            max-width: 600px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .upload-icon {
+            font-size: 50px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .template-download {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .template-download a {
+            color: #3498db;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .template-download a:hover {
+            text-decoration: underline;
+        }
+
+        .config-panel {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .config-panel h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .config-input {
+            margin-bottom: 10px;
+        }
+
+        .config-input label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .config-input input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .save-config {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .location-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .location-tag {
+            background: #e1f0fa;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .location-tag .remove-location {
+            cursor: pointer;
+            color: #e74c3c;
+        }
+        
+        .multi-location {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .location-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .location-input-group input {
+            flex: 1;
+        }
+        
+        .add-location-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .location-list {
+            margin-top: 5px;
+        }
+
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .location-item:last-child {
+            border-bottom: none;
+        }
+
+        .remove-location-btn {
+            color: #e74c3c;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-warehouse"></i> Sistem Keluar Masuk Barang</h1>
+            <p class="description">Kelola stok barang dengan mudah dan efisien - Property of Ahmad Nawawi</p>
+        </header>
+
+        <div class="config-panel">
+            <h3><i class="fas fa-cog"></i> Konfigurasi Supabase</h3>
+            <div class="config-input">
+                <label for="supabase-url">Supabase URL</label>
+                <input type="text" id="supabase-url" placeholder="https://plrfinzrxysakgrsjcvg.supabase.co">
+            </div>
+            <div class="config-input">
+                <label for="supabase-key">Supabase Anon Key</label>
+                <input type="text" id="supabase-key" placeholder="your-anon-key">
+            </div>
+            <button class="save-config" onclick="initSupabase()">
+                <i class="fas fa-save"></i> Simpan Konfigurasi
+            </button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Barang</h3>
+                <p id="total-items">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Barang Masuk Hari Ini</h3>
+                <p id="in-today">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Barang Keluar Hari Ini</h3>
+                <p id="out-today">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Transaksi</h3>
+                <p id="total-transactions">0</p>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab('input-tab')">
+                <i class="fas fa-plus-circle"></i> Input Barang
+            </button>
+            <button class="tab-button" onclick="openTab('history-tab')">
+                <i class="fas fa-history"></i> Riwayat
+            </button>
+            <button class="tab-button" onclick="openTab('stock-tab')">
+                <i class="fas fa-boxes"></i> Stok Barang
+            </button>
+        </div>
+        
+        <div class="import-export">
+            <button class="import-export-btn" onclick="openImportModal()">
+                <i class="fas fa-file-import"></i> Import Data CSV
+            </button>
+            <button class="export-btn" onclick="exportToCSV()">
+                <i class="fas fa-file-export"></i> Export Data CSV
+            </button>
+        </div>
+        
+        <div id="input-tab" class="tab-content active">
+            <h2 class="card-title"><i class="fas fa-plus-circle"></i> Input Data Barang</h2>
+            <div class="card">
+                <form id="item-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="barcode">Barcode</label>
+                            <div class="input-with-icon autocomplete">
+                                <i class="fas fa-barcode"></i>
+                                <input type="text" id="barcode" placeholder="Scan atau masukkan barcode" required autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="name">Nama Barang</label>
+                            <div class="input-with-icon autocomplete">
+                                <i class="fas fa-tag"></i>
+                                <input type="text" id="name" placeholder="Masukkan nama barang" required autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quantity">Quantity</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-cubes"></i>
+                                <input type="number" id="quantity" placeholder="Jumlah barang" required min="1">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="type">Jenis Transaksi</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                                <select id="type" required>
+                                    <option value="in">Barang Masuk</option>
+                                    <option value="out">Barang Keluar</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Lokasi</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <input type="text" id="location" placeholder="Masukkan lokasi barang" required>
+                            </div>
+                            <div class="location-list" id="location-list"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="employee">Nama Karyawan</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="employee" placeholder="Nama karyawan" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit">
+                        <i class="fas fa-save"></i> Simpan Data
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="history-tab" class="tab-content">
+            <h2 class="card-title"><i class="fas fa-history"></i> Riwayat Transaksi</h2>
+            <div class="card">
+                <div class="search-bar">
+                    <input type="text" id="history-search" placeholder="Cari riwayat transaksi...">
+                    <button onclick="searchHistory()">
+                        <i class="fas fa-search"></i> Cari
+                    </button>
+                </div>
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Barcode</th>
+                            <th>Nama Barang</th>
+                            <th>Qty</th>
+                            <th>Jenis</th>
+                            <th>Lokasi</th>
+                            <th>Karyawan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body">
+                        <!-- Data riwayat akan dimasukkan di sini oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="stock-tab" class="tab-content">
+            <h2 class="card-title"><i class="fas fa-boxes"></i> Stok Barang</h2>
+            <div class="card">
+                <div class="search-bar">
+                    <input type="text" id="stock-search" placeholder="Cari stok barang...">
+                    <button onclick="searchStock()">
+                        <i class="fas fa-search"></i> Cari
+                    </button>
+                </div>
+                <table id="stock-table">
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Nama Barang</th>
+                            <th>Stok</th>
+                            <th>Lokasi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-body">
+                        <!-- Data stok akan dimasukkan di sini oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk import data -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeImportModal()">&times;</span>
+            <h2><i class="fas fa-file-import"></i> Import Data Barang</h2>
+            
+            <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <p>Klik atau seret file CSV ke sini untuk mengupload</p>
+                <p class="small">Format: Barcode, Nama Barang, Quantity, Jenis, Lokasi, Karyawan</p>
+                <input type="file" id="file-input" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+            </div>
+            
+            <div class="template-download">
+                <a href="#" onclick="downloadTemplate()">
+                    <i class="fas fa-download"></i> Download Template CSV
+                </a>
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="closeImportModal()" style="background: #95a5a6; margin-right: 10px;">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button onclick="processImport()" id="process-btn" disabled>
+                    <i class="fas fa-database"></i> Proses Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i> Data berhasil disimpan!
+    </div>
+
+    <script>
+        // Inisialisasi Supabase
+        let supabase = null;
+        let items = [];
+        let transactions = [];
+        let uploadData = []; // Untuk menyimpan data yang diupload
+        let itemLocations = {}; // Untuk menyimpan multiple locations per item
+        
+        // Elemen UI
+        const itemForm = document.getElementById('item-form');
+        const historyBody = document.getElementById('history-body');
+        const stockBody = document.getElementById('stock-body');
+        const notification = document.getElementById('notification');
+        const barcodeInput = document.getElementById('barcode');
+        const nameInput = document.getElementById('name');
+        const locationInput = document.getElementById('location');
+        const locationList = document.getElementById('location-list');
+        
+        // Fungsi untuk inisialisasi Supabase
+        function initSupabase() {
+            const supabaseUrl = document.getElementById('supabase-url').value;
+            const supabaseKey = document.getElementById('supabase-key').value;
+            
+            if (!supabaseUrl || !supabaseKey) {
+                showNotification('Harap isi URL dan Key Supabase', false);
+                return;
+            }
+            
+            // Simpan konfigurasi ke localStorage
+            localStorage.setItem('supabase_url', supabaseUrl);
+            localStorage.setItem('supabase_key', supabaseKey);
+            
+            // Inisialisasi Supabase client
+            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            
+            showNotification('Konfigurasi Supabase berhasil disimpan');
+            
+            // Muat data dari Supabase
+            loadDataFromSupabase();
+        }
+        
+        // Fungsi untuk memuat data dari Supabase
+        async function loadDataFromSupabase() {
+            if (!supabase) {
+                showNotification('Supabase belum dikonfigurasi', false);
+                return;
+            }
+            
+            try {
+                // Muat data items
+                const { data: itemsData, error: itemsError } = await supabase
+                    .from('items')
+                    .select('*');
+                
+                if (itemsError) throw itemsError;
+                items = itemsData || [];
+                
+                // Muat data transactions
+                const { data: transactionsData, error: transactionsError } = await supabase
+                    .from('transactions')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (transactionsError) throw transactionsError;
+                transactions = transactionsData || [];
+                
+                // Proses multiple locations dari items
+                processItemLocations();
+                
+                // Perbarui UI
+                updateStats();
+                updateHistoryTable();
+                updateStockTable();
+                
+                showNotification('Data berhasil dimuat dari Supabase');
+            } catch (error) {
+                console.error('Error loading data from Supabase:', error);
+                showNotification('Gagal memuat data dari Supabase: ' + error.message, false);
+            }
+        }
+        
+        // Fungsi untuk memproses multiple locations dari items
+        function processItemLocations() {
+            itemLocations = {};
+            
+            items.forEach(item => {
+                if (!itemLocations[item.barcode]) {
+                    itemLocations[item.barcode] = new Set();
+                }
+                
+                if (item.location) {
+                    // Jika location adalah string yang berisi multiple locations (dipisahkan koma)
+                    if (item.location.includes(',')) {
+                        item.location.split(',').forEach(loc => {
+                            itemLocations[item.barcode].add(loc.trim());
+                        });
+                    } else {
+                        itemLocations[item.barcode].add(item.location);
+                    }
+                }
+            });
+        }
+        
+        // Fungsi untuk menyimpan data ke Supabase
+        async function saveDataToSupabase() {
+            if (!supabase) {
+                showNotification('Supabase belum dikonfigurasi', false);
+                return;
+            }
+            
+            try {
+                // Simpan items ke Supabase
+                for (const item of items) {
+                    const { error } = await supabase
+                        .from('items')
+                        .upsert(item, { onConflict: 'barcode' });
+                    
+                    if (error) throw error;
+                }
+                
+                // Simpan transactions ke Supabase
+                for (const transaction of transactions) {
+                    const { error } = await supabase
+                        .from('transactions')
+                        .insert(transaction);
+                    
+                    if (error) throw error;
+                }
+                
+                showNotification('Data berhasil disimpan ke Supabase');
+            } catch (error) {
+                console.error('Error saving data to Supabase:', error);
+                showNotification('Gagal menyimpan data ke Supabase: ' + error.message, false);
+            }
+        }
+        
+        // Fungsi untuk membuka tab
+        function openTab(tabId) {
+            // Sembunyikan semua tab content
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // Nonaktifkan semua tab buttons
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+            
+            // Tampilkan tab yang dipilih dan aktifkan button-nya
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            // Jika membuka tab riwayat atau stok, perbarui datanya
+            if (tabId === 'history-tab') {
+                updateHistoryTable();
+            } else if (tabId === 'stock-tab') {
+                updateStockTable();
+            }
+        }
+        
+        // Fungsi untuk menampilkan notifikasi
+        function showNotification(message, isSuccess = true) {
+            notification.innerHTML = `<i class="fas ${isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+            notification.style.background = isSuccess ? '#2ecc71' : '#e74c3c';
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Fungsi untuk memperbarui statistik
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+            
+            // Hitung total barang
+            const totalItems = items.reduce((total, item) => total + item.stock, 0);
+            document.getElementById('total-items').textContent = totalItems;
+            
+            // Hitung barang masuk hari ini
+            const inToday = transactions.filter(transaction => {
+                const transactionDate = new Date(transaction.created_at).toISOString().split('T')[0];
+                return transaction.type === 'in' && transactionDate === today;
+            }).reduce((total, transaction) => total + transaction.quantity, 0);
+            
+            document.getElementById('in-today').textContent = inToday;
+            
+            // Hitung barang keluar hari ini
+            const outToday = transactions.filter(transaction => {
+                const transactionDate = new Date(transaction.created_at).toISOString().split('T')[0];
+                return transaction.type === 'out' && transactionDate === today;
+            }).reduce((total, transaction) => total + transaction.quantity, 0);
+            
+            document.getElementById('out-today').textContent = outToday;
+            
+            // Total transaksi
+            document.getElementById('total-transactions').textContent = transactions.length;
+        }
+        
+        // Fungsi untuk memperbarui tabel riwayat
+        function updateHistoryTable() {
+            historyBody.innerHTML = '';
+            
+            if (transactions.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada data riwayat</td></tr>';
+                return;
+            }
+            
+            transactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                const transactionDate = new Date(transaction.created_at);
+                const formattedDate = formatDateForDisplay(transactionDate);
+                
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${transaction.barcode}</td>
+                    <td>${transaction.name}</td>
+                    <td>${transaction.quantity}</td>
+                    <td><span class="badge ${transaction.type === 'in' ? 'badge-in' : 'badge-out'}">${transaction.type === 'in' ? 'Masuk' : 'Keluar'}</span></td>
+                    <td>${transaction.location}</td>
+                    <td>${transaction.employee}</td>
+                `;
+                historyBody.appendChild(row);
+            });
+        }
+        
+        // Fungsi untuk memformat tanggal untuk tampilan
+        function formatDateForDisplay(date) {
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Fungsi untuk memperbarui tabel stok
+        function updateStockTable() {
+            stockBody.innerHTML = '';
+            
+            if (items.length === 0) {
+                stockBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Tidak ada data stok</td></tr>';
+                return;
+            }
+            
+            // Buat map untuk mengelompokkan item berdasarkan barcode
+            const itemMap = {};
+            
+            items.forEach(item => {
+                if (!itemMap[item.barcode]) {
+                    itemMap[item.barcode] = {
+                        barcode: item.barcode,
+                        name: item.name,
+                        stock: 0,
+                        locations: new Set()
+                    };
+                }
+                
+                itemMap[item.barcode].stock += item.stock;
+                
+                // Tambahkan location ke Set
+                if (item.location) {
+                    if (item.location.includes(',')) {
+                        item.location.split(',').forEach(loc => {
+                            itemMap[item.barcode].locations.add(loc.trim());
+                        });
+                    } else {
+                        itemMap[item.barcode].locations.add(item.location);
+                    }
+                }
+            });
+            
+            // Tampilkan item yang sudah dikelompokkan
+            Object.values(itemMap).forEach(item => {
+                const row = document.createElement('tr');
+                const locations = Array.from(item.locations).join(', ');
+                
+                row.innerHTML = `
+                    <td>${item.barcode}</td>
+                    <td>${item.name}</td>
+                    <td>${item.stock}</td>
+                    <td>${locations || '-'}</td>
+                    <td class="action-buttons">
+                        <button class="btn-edit" onclick="editItem('${item.barcode}')"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="btn-delete" onclick="deleteItem('${item.barcode}')"><i class="fas fa-trash"></i> Hapus</button>
+                    </td>
+                `;
+                stockBody.appendChild(row);
+            });
+        }
+        
+        // Fungsi untuk mencari riwayat
+        function searchHistory() {
+            const searchTerm = document.getElementById('history-search').value.toLowerCase();
+            const rows = historyBody.getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].textContent.toLowerCase().includes(searchTerm)) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                rows[i].style.display = found ? '' : 'none';
+            }
+        }
+        
+        // Fungsi untuk mencari stok
+        function searchStock() {
+            const searchTerm = document.getElementById('stock-search').value.toLowerCase();
+            const rows = stockBody.getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].textContent.toLowerCase().includes(searchTerm)) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                rows[i].style.display = found ? '' : 'none';
+            }
+        }
+        
+        // Fungsi untuk mengedit item
+        function editItem(barcode) {
+            const item = items.find(item => item.barcode === barcode);
+            if (item) {
+                document.getElementById('barcode').value = item.barcode;
+                document.getElementById('name').value = item.name;
+                document.getElementById('location').value = item.location;
+                
+                // Tampilkan daftar lokasi untuk item ini
+                updateLocationList(barcode);
+                
+                // Buka tab input
+                openTab('input-tab');
+                
+                showNotification(`Data barang ${item.name} telah dimuat untuk edit. Jangan lupa simpan setelah perubahan.`);
+            }
+        }
+        
+        // Fungsi untuk memperbarui daftar lokasi
+        function updateLocationList(barcode) {
+            locationList.innerHTML = '';
+            
+            if (itemLocations[barcode] && itemLocations[barcode].size > 0) {
+                const title = document.createElement('p');
+                title.style.fontWeight = 'bold';
+                title.style.marginBottom = '10px';
+                title.textContent = 'Lokasi yang tersedia:';
+                locationList.appendChild(title);
+                
+                itemLocations[barcode].forEach(location => {
+                    const locationItem = document.createElement('div');
+                    locationItem.className = 'location-item';
+                    locationItem.innerHTML = `
+                        <span>${location}</span>
+                        <button class="remove-location-btn" onclick="removeLocation('${barcode}', '${location}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    locationList.appendChild(locationItem);
+                });
+            }
+        }
+        
+        // Fungsi untuk menghapus lokasi
+        function removeLocation(barcode, location) {
+            if (itemLocations[barcode]) {
+                itemLocations[barcode].delete(location);
+                updateLocationList(barcode);
+                
+                // Perbarui juga data di Supabase
+                updateItemLocationsInSupabase(barcode);
+            }
+        }
+        
+        // Fungsi untuk memperbarui lokasi item di Supabase
+        async function updateItemLocationsInSupabase(barcode) {
+            if (!supabase) return;
+            
+            try {
+                const locations = Array.from(itemLocations[barcode] || []).join(',');
+                
+                const { error } = await supabase
+                    .from('items')
+                    .update({ location: locations })
+                    .eq('barcode', barcode);
+                
+                if (error) throw error;
+                
+                showNotification('Lokasi berhasil diperbarui');
+            } catch (error) {
+                console.error('Error updating locations:', error);
+                showNotification('Gagal memperbarui lokasi: ' + error.message, false);
+            }
+        }
+        
+        // Fungsi untuk menghapus item
+        async function deleteItem(barcode) {
+            if (!confirm('Apakah Anda yakin ingin menghapus barang ini?')) return;
+            
+            if (!supabase) {
+                showNotification('Supabase belum dikonfigurasi', false);
+                return;
+            }
+            
+            try {
+                // Hapus dari Supabase
+                const { error } = await supabase
+                    .from('items')
+                    .delete()
+                    .eq('barcode', barcode);
+                
+                if (error) throw error;
+                
+                // Hapus dari array lokal
+                items = items.filter(item => item.barcode !== barcode);
+                transactions = transactions.filter(transaction => transaction.barcode !== barcode);
+                
+                // Hapus dari itemLocations
+                delete itemLocations[barcode];
+                
+                // Perbarui UI
+                updateStockTable();
+                showNotification('Barang berhasil dihapus');
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                showNotification('Gagal menghapus barang: ' + error.message, false);
+            }
+        }
+        
+        // Fungsi autocomplete untuk barcode dan nama barang
+        function setupAutocomplete() {
+            // Autocomplete untuk barcode
+            barcodeInput.addEventListener('input', function() {
+                const val = this.value;
+                closeAllLists();
+                if (!val) return false;
+                
+                const filteredItems = items.filter(item => 
+                    item.barcode.toLowerCase().includes(val.toLowerCase())
+                );
+                
+                if (filteredItems.length > 0) {
+                    const list = document.createElement("div");
+                    list.setAttribute("id", "barcode-autocomplete-list");
+                    list.setAttribute("class", "autocomplete-items");
+                    this.parentNode.appendChild(list);
+                    
+                    filteredItems.forEach(item => {
+                        const itemElement = document.createElement("div");
+                        itemElement.innerHTML = `<strong>${item.barcode}</strong> - ${item.name}`;
+                        itemElement.innerHTML += `<input type="hidden" value="${item.barcode}">`;
+                        itemElement.addEventListener("click", function() {
+                            barcodeInput.value = item.barcode;
+                            nameInput.value = item.name;
+                            document.getElementById('location').value = item.location;
+                            updateLocationList(item.barcode);
+                            closeAllLists();
+                        });
+                        list.appendChild(itemElement);
+                    });
+                }
+            });
+            
+            // Autocomplete untuk nama barang
+            nameInput.addEventListener('input', function() {
+                const val = this.value;
+                closeAllLists();
+                if (!val) return false;
+                
+                const filteredItems = items.filter(item => 
+                    item.name.toLowerCase().includes(val.toLowerCase())
+                );
+                
+                if (filteredItems.length > 0) {
+                    const list = document.createElement("div");
+                    list.setAttribute("id", "name-autocomplete-list");
+                    list.setAttribute("class", "autocomplete-items");
+                    this.parentNode.appendChild(list);
+                    
+                    filteredItems.forEach(item => {
+                        const itemElement = document.createElement("div");
+                        itemElement.innerHTML = `<strong>${item.name}</strong> - ${item.barcode}`;
+                        itemElement.innerHTML += `<input type="hidden" value="${item.name}">`;
+                        itemElement.addEventListener("click", function() {
+                            nameInput.value = item.name;
+                            barcodeInput.value = item.barcode;
+                            document.getElementById('location').value = item.location;
+                            updateLocationList(item.barcode);
+                            closeAllLists();
+                        });
+                        list.appendChild(itemElement);
+                    });
+                }
+            });
+            
+            // Tutup semua list autocomplete ketika klik di tempat lain
+            document.addEventListener('click', function(e) {
+                closeAllLists(e.target);
+            });
+        }
+        
+        function closeAllLists(elmnt) {
+            const x = document.getElementsByClassName("autocomplete-items");
+            for (let i = 0; i < x.length; i++) {
+                if (elmnt != x[i] && elmnt != barcodeInput && elmnt != nameInput) {
+                    x[i].parentNode.removeChild(x[i]);
+                }
+            }
+        }
+        
+        // Fungsi untuk modal import
+        function openImportModal() {
+            document.getElementById('import-modal').style.display = 'block';
+            document.getElementById('process-btn').disabled = true;
+            uploadData = [];
+        }
+        
+        function closeImportModal() {
+            document.getElementById('import-modal').style.display = 'none';
+        }
+        
+        function handleFileSelect(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
+            
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data.length > 0) {
+                        uploadData = results.data;
+                        document.getElementById('process-btn').disabled = false;
+                        showNotification('File berhasil dibaca. Klik "Proses Data" untuk mengimpor.', true);
+                    } else {
+                        showNotification('File tidak berisi data', false);
+                    }
+                },
+                error: function(error) {
+                    showNotification('Error membaca file: ' + error.message, false);
+                }
+            });
+        }
+        
+        async function processImport() {
+            if (uploadData.length === 0) {
+                showNotification('Tidak ada data untuk diproses', false);
+                return;
+            }
+            
+            if (!supabase) {
+                showNotification('Supabase belum dikonfigurasi', false);
+                return;
+            }
+            
+            let processed = 0;
+            let skipped = 0;
+            
+            try {
+                // Proses setiap baris data
+                for (let i = 0; i < uploadData.length; i++) {
+                    const row = uploadData[i];
+                    
+                    // Validasi data
+                    if (!row.Barcode || !row.Nama_Barang || !row.Quantity || !row.Jenis || !row.Lokasi || !row.Karyawan) {
+                        skipped++;
+                        continue;
+                    }
+                    
+                    const barcode = String(row.Barcode);
+                    const name = String(row.Nama_Barang);
+                    const quantity = parseInt(row.Quantity) || 0;
+                    const type = row.Jenis.toLowerCase();
+                    const location = String(row.Lokasi);
+                    const employee = String(row.Karyawan);
+                    
+                    // Validasi jenis transaksi
+                    if (type !== 'in' && type !== 'out') {
+                        skipped++;
+                        continue;
+                    }
+                    
+                    // Waktu transaksi (gunakan format ISO)
+                    const now = new Date().toISOString();
+                    
+                    // Simpan transaksi ke Supabase
+                    const { error: transactionError } = await supabase
+                        .from('transactions')
+                        .insert({
+                            barcode, name, quantity, type, location, employee, created_at: now
+                        });
+                    
+                    if (transactionError) {
+                        console.error('Error saving transaction:', transactionError);
+                        skipped++;
+                        continue;
+                    }
+                    
+                    // Update stok barang di Supabase
+                    const { data: existingItem, error: selectError } = await supabase
+                        .from('items')
+                        .select('*')
+                        .eq('barcode', barcode)
+                        .single();
+                    
+                    if (selectError && selectError.code !== 'PGRST116') { // PGRST116 adalah error ketika tidak ada data ditemukan
+                        console.error('Error checking existing item:', selectError);
+                        skipped++;
+                        continue;
+                    }
+                    
+                    if (existingItem) {
+                        // Jika barang sudah ada, update stok
+                        let newStock = existingItem.stock;
+                        let currentLocation = existingItem.location || '';
+                        
+                        if (type === 'in') {
+                            newStock += quantity;
+                            
+                            // Tambahkan lokasi baru jika belum ada
+                            if (location && !currentLocation.includes(location)) {
+                                if (currentLocation) {
+                                    currentLocation += `, ${location}`;
+                                } else {
+                                    currentLocation = location;
+                                }
+                            }
+                        } else {
+                            // Cek stok cukup
+                            if (existingItem.stock < quantity) {
+                                showNotification(`Stok tidak cukup untuk ${name} (${barcode})`, false);
+                                skipped++;
+                                continue;
+                            }
+                            newStock -= quantity;
+                        }
+                        
+                        const { error: updateError } = await supabase
+                            .from('items')
+                            .update({ 
+                                stock: newStock, 
+                                location: currentLocation
+                            })
+                            .eq('barcode', barcode);
+                        
+                        if (updateError) {
+                            console.error('Error updating item:', updateError);
+                            skipped++;
+                            continue;
+                        }
+                    } else {
+                        // Jika barang baru, tambahkan ke items
+                        if (type === 'out') {
+                            showNotification(`Tidak dapat mengurangi stok barang yang tidak ada: ${name} (${barcode})`, false);
+                            skipped++;
+                            continue;
+                        }
+                        
+                        const { error: insertError } = await supabase
+                            .from('items')
+                            .insert({
+                                barcode,
+                                name,
+                                stock: quantity,
+                                location: location
+                            });
+                        
+                        if (insertError) {
+                            console.error('Error inserting item:', insertError);
+                            skipped++;
+                            continue;
+                        }
+                    }
+                    
+                    processed++;
+                }
+                
+                // Muat ulang data dari Supabase
+                await loadDataFromSupabase();
+                
+                // Tampilkan notifikasi
+                showNotification(`Berhasil memproses ${processed} data, ${skipped} data dilewati`);
+                
+                // Tutup modal
+                closeImportModal();
+            } catch (error) {
+                console.error('Error processing import:', error);
+                showNotification('Gagal memproses data: ' + error.message, false);
+            }
+        }
+        
+        // Fungsi untuk export data ke CSV
+        function exportToCSV() {
+            // Buat data CSV dari items
+            const headers = ['Barcode', 'Nama_Barang', 'Stok', 'Lokasi'];
+            let csv = headers.join(',') + '\n';
+            
+            items.forEach(item => {
+                const row = [
+                    item.barcode,
+                    `"${item.name}"`, // Tambahkan quotes untuk menghindari masalah koma dalam nama
+                    item.stock,
+                    `"${item.location}"` // Tambahkan quotes untuk menghindari masalah koma dalam lokasi
+                ];
+                csv += row.join(',') + '\n';
+            });
+            
+            // Buat file dan download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'data_barang.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('Data berhasil diexport ke CSV');
+        }
+        
+        // Fungsi untuk download template
+        function downloadTemplate() {
+            const headers = ['Barcode', 'Nama_Barang', 'Quantity', 'Jenis', 'Lokasi', 'Karyawan'];
+            const example = ['123456789', 'Laptop ASUS', '5', 'in', 'Rak A1', 'Budi'];
+            
+            let csv = headers.join(',') + '\n';
+            csv += example.join(',') + '\n';
+            
+            // Buat file dan download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'template_import.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Handle form submission
+        itemForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!supabase) {
+                showNotification('Supabase belum dikonfigurasi', false);
+                return;
+            }
+            
+            // Ambil nilai dari form
+            const barcode = document.getElementById('barcode').value;
+            const name = document.getElementById('name').value;
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const type = document.getElementById('type').value;
+            const location = document.getElementById('location').value;
+            const employee = document.getElementById('employee').value;
+            
+            // Validasi
+            if (quantity <= 0) {
+                showNotification('Quantity harus lebih dari 0', false);
+                return;
+            }
+            
+            // Waktu transaksi (gunakan format ISO)
+            const createdAt = new Date().toISOString();
+            
+            try {
+                // Simpan transaksi ke Supabase
+                const { error: transactionError } = await supabase
+                    .from('transactions')
+                    .insert({
+                        barcode, name, quantity, type, location, employee, created_at: createdAt
+                    });
+                
+                if (transactionError) throw transactionError;
+                
+                // Update stok barang di Supabase
+                const { data: existingItem, error: selectError } = await supabase
+                    .from('items')
+                    .select('*')
+                    .eq('barcode', barcode)
+                    .single();
+                
+                if (selectError && selectError.code !== 'PGRST116') { // PGRST116 adalah error ketika tidak ada data ditemukan
+                    throw selectError;
+                }
+                
+                if (existingItem) {
+                    // Jika barang sudah ada, update stok
+                    let newStock = existingItem.stock;
+                    let currentLocation = existingItem.location || '';
+                    
+                    if (type === 'in') {
+                        newStock += quantity;
+                        
+                        // Tambahkan lokasi baru jika belum ada
+                        if (location && !currentLocation.includes(location)) {
+                            if (currentLocation) {
+                                currentLocation += `, ${location}`;
+                            } else {
+                                currentLocation = location;
+                            }
+                        }
+                    } else {
+                        // Cek stok cukup
+                        if (existingItem.stock < quantity) {
+                            showNotification('Stok tidak cukup untuk transaksi keluar', false);
+                            return;
+                        }
+                        newStock -= quantity;
+                    }
+                    
+                    const { error: updateError } = await supabase
+                        .from('items')
+                        .update({ 
+                            stock: newStock, 
+                            location: currentLocation
+                        })
+                        .eq('barcode', barcode);
+                    
+                    if (updateError) throw updateError;
+                } else {
+                    // Jika barang baru, tambahkan ke items
+                    if (type === 'out') {
+                        showNotification('Tidak dapat mengurangi stok barang yang tidak ada', false);
+                        return;
+                    }
+                    
+                    const { error: insertError } = await supabase
+                        .from('items')
+                        .insert({
+                            barcode,
+                            name,
+                            stock: quantity,
+                            location: location
+                        });
+                    
+                    if (insertError) throw insertError;
+                }
+                
+                // Muat ulang data dari Supabase
+                await loadDataFromSupabase();
+                
+                // Reset form
+                itemForm.reset();
+                locationList.innerHTML = '';
+                
+                // Tampilkan notifikasi
+                showNotification('Data berhasil disimpan!');
+            } catch (error) {
+                console.error('Error saving data:', error);
+                showNotification('Gagal menyimpan data: ' + error.message, false);
+            }
+        });
+        
+        // Inisialisasi data saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            // Coba muat konfigurasi Supabase dari localStorage
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_key');
+            
+            if (savedUrl && savedKey) {
+                document.getElementById('supabase-url').value = savedUrl;
+                document.getElementById('supabase-key').value = savedKey;
+                initSupabase();
+            } else {
+                showNotification('Harap konfigurasi Supabase terlebih dahulu', false);
+            }
+            
+            setupAutocomplete();
+        });
+    </script>
+</body>
+</html>
